@@ -5,10 +5,14 @@ from django.views import View
 from .models import Conversation
 from .nlp import generate_response  # Assurez-vous que cette fonction est définie dans nlp.py  
 import json
+from django.shortcuts import render
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ChatView(View):
     def post(self, request):
+        """
+        Gestion de l'entrée de l'utilisateur 
+        """
         try:
             # Récupérer l'entrée utilisateur
             data = json.loads(request.body)
@@ -21,7 +25,7 @@ class ChatView(View):
             response = generate_response(user_input)
 
             # Sauvegarder la conversation dans la base de données
-            conversation = Conversation.objects.create(user_input=user_input, response=response)
+            Conversation.objects.create(user_input=user_input, response=response)
 
             # Retourner la réponse
             return JsonResponse({"response": response}, status=200)
@@ -29,10 +33,15 @@ class ChatView(View):
             return JsonResponse({"error": str(e)}, status=500)
 
     def get(self, request):
-        # Récupérer l'historique des conversations
+        """
+        Récupère l'historique des conversations
+        """
         conversations = Conversation.objects.all().order_by('-timestamp')
         data = [
             {"user_input": conv.user_input, "response": conv.response, "timestamp": conv.timestamp}
             for conv in conversations
         ]
         return JsonResponse(data, safe=False, status=200)
+    
+def chat_view(request):
+    return render(request, 'chat.html')
